@@ -7,9 +7,11 @@ import os
 import platform
 import ssl
 import time
+import json
+from turtle import st
 
 import cv2
-from aiohttp import web
+from aiohttp import web, WSMsgType
 from aiortc import (
     MediaStreamTrack,
     RTCDataChannel,
@@ -26,6 +28,9 @@ ROOT = os.path.dirname(__file__)
 
 relay = None
 webcam = None
+
+personal_pool = {}
+room_pool = {}
 
 
 async def index(request):
@@ -45,7 +50,13 @@ async def offer(request):
     pc = RTCPeerConnection()
     pcs.add(pc)
 
-    await server(pc, offer)
+    room = request.query.get('room')
+    user_name = request.query.get('user_name')
+
+    if room:
+        await server(pc, offer, room, user_name)
+    else:
+        await server(pc, offer)
 
     return web.Response(
         content_type="application/json",
@@ -55,10 +66,67 @@ async def offer(request):
     )
 
 
+async def broadcast_msg(user_name, msg, room=""):
+
+    if type(msg) == dict:
+        msg = json.dumps(msg)
+
+    # 如果不是聊天室，则单独返回
+    if not room:
+        ws = personal_pool[user_name]
+        await ws.send_str(msg)
+    # 如果是聊天室则广播
+    else:
+        users = room_pool[room]
+        for name, ws in users.items():
+            # if user_name != name:
+            await ws.send_str(msg)
+
+
+async def websocket_handler(request):
+    # ws init
+    ws = web.WebSocketResponse()
+
+    # 等待用戶連線
+    await ws.prepare(request)
+    room = request.query.get('room')
+    user_name = request.query.get('user_name')
+    print("room", room)
+    print("user_name", user_name)
+
+    if room:
+        if room in room_pool:
+            room_pool[room][user_name] = ws
+        else:
+            room_pool[room] = {user_name: ws}
+
+    else:
+        if user_name in personal_pool:
+            await ws.send_str("名字已有")
+            print('websocket connection closed')
+            return ws
+        else:
+            personal_pool[user_name] = ws
+
+    async for msg in ws:
+        if msg.type == WSMsgType.TEXT:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                await broadcast_msg(user_name, msg.data, room)
+                # await ws.send_str(msg.data + '->/answer')
+
+        elif msg.type == WSMsgType.ERROR:
+            print('ws connection closed with exception %s' % ws.exception())
+
+    # 斷開連結
+    print('websocket connection closed')
+    return ws
+
 pcs = set()
 
 
-async def server(pc, offer):
+async def server(pc, offer, room=None, user_name=None):
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
         print("Connection state is %s" % pc.connectionState)
@@ -70,7 +138,7 @@ async def server(pc, offer):
     def on_track(track):
         print("======= received track: ", track)
         if track.kind == "video":
-            t = FaceSwapper(track)
+            t = FaceSwapper(track, room, user_name)
             pc.addTrack(t)
 
     await pc.setRemoteDescription(offer)
@@ -88,10 +156,12 @@ async def on_shutdown(app):
 class FaceSwapper(VideoStreamTrack):
     kind = "video"
 
-    def __init__(self, track):
+    def __init__(self, track, room, user_name):
         super().__init__()
         self.track = track
         self.processImage = ProcessImage()
+        self.room = room
+        self.user_name = user_name
         # self.face_detector = cv2.CascadeClassifier(
         #     "./haarcascade_frontalface_alt.xml")
         # self.face = cv2.imread("./wu.png")
@@ -100,7 +170,13 @@ class FaceSwapper(VideoStreamTrack):
         timestamp, video_timestamp_base = await self.next_timestamp()
         frame = await self.track.recv()
         frame = frame.to_ndarray(format="bgr24")
-        frame = self.processImage.process_frame(frame)
+        [frame, counter, stage] = self.processImage.process_frame(frame)
+
+        if self.room != None:
+            await broadcast_msg(self.user_name, {
+                "counter": counter,
+                "stage": stage
+            }, self.room)
 
         # s = time.time()
         # face_zones = self.face_detector.detectMultiScale(
@@ -130,6 +206,7 @@ if __name__ == "__main__":
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     app.router.add_get("/", index)
+    app.add_routes([web.get('/ws', websocket_handler)])
     app.router.add_get("/js/client.js", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(app, host=args.host, port=args.port)
