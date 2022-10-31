@@ -2,8 +2,28 @@ var pc = null;
 var localVideo = document.querySelector("video#localVideo");
 var serverVideo = document.querySelector("video#serverVideo");
 
+var socket = null;
 var room = generateRandomString(5);
 var user_name = generateRandomString(5);
+
+$(document).ready(function () {
+  $("#startBtn").click(function (e) {
+    const status = $(this).data("status");
+    if (status == "off") {
+      $(this).removeClass("btn-success");
+      $(this).addClass("btn-danger");
+      $(this).html(`<i class="fas fa-stop fa-sm text-white-50"></i> 結束`);
+      $(this).data("status", "on");
+      start();
+    } else {
+      $(this).removeClass("btn-danger");
+      $(this).addClass("btn-success");
+      $(this).html(`<i class="fas fa-play fa-sm text-white-50"></i> 開始`);
+      $(this).data("status", "off");
+      stop();
+    }
+  });
+});
 
 navigator.mediaDevices
   .getUserMedia({
@@ -85,9 +105,9 @@ function start() {
   });
 
   wsStart();
-  document.getElementById("start").style.display = "none";
   negotiate();
-  document.getElementById("stop").style.display = "inline-block";
+  // document.getElementById("start").style.display = "none";
+  // document.getElementById("stop").style.display = "inline-block";
 }
 
 function generateRandomString(num) {
@@ -103,15 +123,14 @@ function generateRandomString(num) {
 }
 
 function stop() {
-  document.getElementById("stop").style.display = "none";
-  document.getElementById("start").style.display = "inline-block";
   setTimeout(function () {
     pc.close();
+    socket.send("close");
   }, 500);
 }
 
 function wsStart() {
-  let socket = new WebSocket(
+  socket = new WebSocket(
     `ws://localhost:8080/ws?room=${room}&user_name=${user_name}`
   );
 
@@ -123,25 +142,27 @@ function wsStart() {
 
   socket.onmessage = function (event) {
     const data = JSON.parse(event.data);
-    document.querySelector("#information").innerHTML = `做了：${
-      data.counter
-    } 下，現在你的腳：${data.stage == "up" ? "抬起" : "放下"}`;
+    $("[data-stage]").html(data.stage == "up" ? "抬起" : "放下");
+    $("[data-counter]").html(`${data.counter} 次`);
+    // document.querySelector("#information").innerHTML = `做了：${
+    //   data.counter
+    // } 下，現在你的腳：${data.stage == "up" ? "抬起" : "放下"}`;
     // alert(`[message] Data received from server: ${event.data}`);
   };
 
   socket.onclose = function (event) {
     if (event.wasClean) {
-      alert(
+      console.log(
         `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
       );
     } else {
       // 例如服务器进程被杀死或网络中断
       // 在这种情况下，event.code 通常为 1006
-      alert("[close] Connection died");
+      console.log("[close] Connection died");
     }
   };
 
   socket.onerror = function (error) {
-    alert(`[error] ${error.message}`);
+    console.log(`[error] ${error.message}`);
   };
 }
