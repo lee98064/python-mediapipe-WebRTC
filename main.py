@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import platform
+import re
 import ssl
 import time
 import json
@@ -39,6 +40,7 @@ async def index(request):
 
 
 async def javascript(request):
+    print(request.path)
     content = open(os.path.join(ROOT, "js/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
@@ -206,7 +208,14 @@ if __name__ == "__main__":
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     app.router.add_get("/", index)
-    app.add_routes([web.get('/ws', websocket_handler)])
-    app.router.add_get("/js/client.js", javascript)
+    app.add_routes([
+        web.get('/ws', websocket_handler),
+        web.static("/js", os.path.join(ROOT, "js")),
+        web.static("/css", os.path.join(ROOT, "css")),
+        web.static("/img", os.path.join(ROOT, "img")),
+        web.static("/vendor", os.path.join(ROOT, "vendor")),
+    ])
+
+    # app.router.add_get("/js/", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(app, host=args.host, port=args.port)
