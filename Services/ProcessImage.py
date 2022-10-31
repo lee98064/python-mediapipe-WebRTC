@@ -100,21 +100,21 @@ class ProcessImage():
 
             # Render curl counter
             # Setup status box
-            cv2.rectangle(image, (0, 0), (700, 73), (245, 117, 16), -1)
+            cv2.rectangle(image, (0, 0), (100, 73), (245, 117, 16), -1)
 
             # Rep data
-            cv2.putText(image, 'REPS', (15, 12),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            # cv2.putText(image, 'REPS', (15, 12),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
             cv2.putText(image, str(self.counter),
                         (10, 60),
                         cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
 
             # Stage data
-            cv2.putText(image, 'STAGE', (65, 12),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
-            cv2.putText(image, self.stage,
-                        (60, 60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+            # cv2.putText(image, 'STAGE', (65, 12),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            # cv2.putText(image, self.stage,
+            #             (60, 60),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
 
             # Render detections
             mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
