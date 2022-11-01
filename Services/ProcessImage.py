@@ -89,18 +89,29 @@ class ProcessImage():
                             )
 
                 # Curl counter logic
-                if angle > 100:
-                    self.stage = "d"
-                if angle < 100 and self.stage == 'd':
-                    self.stage = "up"
+                if angle > 160:
+                    self.stage = "站立"
+                elif angle > 120 or ankleAngle > 120:
+                    self.stage = "不標準"
+
+                if (angle < 120 and ankleAngle < 120 and (self.stage == "站立" or self.stage == "不標準" or self.stage == "無法偵測")):
+                    self.stage = "標準"
                     self.counter += 1
 
+                # if angle < 100 and self.stage == '不標準':
+                #     self.stage = "標準"
+                #     self.counter += 1
+
             except:
+                self.stage == "無法偵測"
                 pass
 
             # Render curl counter
             # Setup status box
-            cv2.rectangle(image, (0, 0), (100, 73), (245, 117, 16), -1)
+            if (self.stage == "標準"):
+                cv2.rectangle(image, (0, 0), (100, 73), (0, 255, 128), -1)
+            else:
+                cv2.rectangle(image, (0, 0), (100, 73), (0, 0, 255), -1)
 
             # Rep data
             # cv2.putText(image, 'REPS', (15, 12),

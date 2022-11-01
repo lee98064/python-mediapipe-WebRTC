@@ -142,7 +142,7 @@ function wsStart() {
 
   socket.onmessage = function (event) {
     const data = JSON.parse(event.data);
-    $("[data-stage]").html(data.stage == "up" ? "抬起" : "放下");
+    $("[data-stage]").html(data.stage);
     $("[data-counter]").html(`${data.counter} 次`);
     // document.querySelector("#information").innerHTML = `做了：${
     //   data.counter
