@@ -124,4 +124,4 @@ class ProcessImage():
                                           color=(245, 66, 230), thickness=2, circle_radius=2)
                                       )
 
-        return [image, self.counter, self.stage]
+        return image

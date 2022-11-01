@@ -172,12 +172,12 @@ class FaceSwapper(VideoStreamTrack):
         timestamp, video_timestamp_base = await self.next_timestamp()
         frame = await self.track.recv()
         frame = frame.to_ndarray(format="bgr24")
-        [frame, counter, stage] = self.processImage.process_frame(frame)
+        frame = self.processImage.process_frame(frame)
 
         if self.room != None:
             await broadcast_msg(self.user_name, {
-                "counter": counter,
-                "stage": stage
+                "counter": self.processImage.counter,
+                "stage": self.processImage.stage
             }, self.room)
 
         # s = time.time()
