@@ -207,15 +207,13 @@ if __name__ == "__main__":
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
-    app.router.add_get("/", index)
     app.add_routes([
-        web.get('/ws', websocket_handler),
+        web.get("/", index),
         web.static("/js", os.path.join(ROOT, "js")),
         web.static("/css", os.path.join(ROOT, "css")),
         web.static("/img", os.path.join(ROOT, "img")),
         web.static("/vendor", os.path.join(ROOT, "vendor")),
+        web.post('/offer', offer),
+        web.get('/ws', websocket_handler),
     ])
-
-    # app.router.add_get("/js/", javascript)
-    app.router.add_post("/offer", offer)
     web.run_app(app, host=args.host, port=args.port)
