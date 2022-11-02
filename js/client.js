@@ -30,7 +30,7 @@ navigator.mediaDevices
     video: {
       height: 360,
       width: 480,
-      frameRate: 10,
+      // frameRate: 60,
     },
   })
   .then((stream) => {
@@ -131,7 +131,7 @@ function stop() {
 
 function wsStart() {
   socket = new WebSocket(
-    `ws://localhost:8080/ws?room=${room}&user_name=${user_name}`
+    `ws://${window.location.host}/ws?room=${room}&user_name=${user_name}`
   );
 
   socket.onopen = function (e) {
