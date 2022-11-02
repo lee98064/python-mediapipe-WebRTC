@@ -8,7 +8,6 @@ av = "*"
 aiortc = "*"
 aiohttp = "*"
 opencv-python = "*"
-mediapipe = "*"
 numpy = "*"
 
 [dev-packages]
